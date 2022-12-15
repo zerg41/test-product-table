@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState } from 'react';
 // api
-import { getDataRequest } from 'api';
+import { getDocumentsData } from 'api';
 // components
 import { Layout, message } from 'antd';
 import { ProductTable } from 'components';
@@ -17,23 +17,40 @@ const App: FC = () => {
   let [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
-    getDataRequest()
-      .then((data) => setData(data))
+    const MESSAGE_KEY = 'fetch';
+
+    messageApi.open({ key: MESSAGE_KEY, type: 'loading', content: 'Fetch data...' });
+
+    let documents1 = getDocumentsData(1);
+    let documents2 = getDocumentsData(2);
+
+    Promise.all([documents1, documents2])
+      .then(([data1, data2]) => {
+        setData([...data1, ...data2]);
+        messageApi.open({
+          key: MESSAGE_KEY,
+          type: 'success',
+          content: 'Data loaded!',
+          duration: 2,
+        });
+      })
       .catch((err) => {
-        messageApi.error(err, 2);
+        messageApi.open({
+          key: MESSAGE_KEY,
+          type: 'error',
+          content: 'Fetch failed!',
+          duration: 2,
+        });
       });
   }, []);
 
-  useEffect(() => {
-    console.log(data);
-  }, [data]);
-
   return (
-    <Layout>
+    <Layout style={{ height: '100vh' }}>
+      {contextHolder}
       <Header>
         <h2 className={s.title}>Product Table</h2>
       </Header>
-      <Content>
+      <Content style={{ display: 'flex', justifyContent: 'center' }}>
         <ProductTable data={data ?? []} />
       </Content>
     </Layout>

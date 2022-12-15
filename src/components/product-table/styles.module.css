@@ -1,0 +1,11 @@
+.subtotal {
+  margin: 0;
+  padding: 0;
+  padding-left: 50px;
+  font-weight: 600;
+}
+
+.table {
+  margin-top: 40px;
+  width: 80%;
+}
