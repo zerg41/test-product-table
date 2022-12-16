@@ -1,4 +1,4 @@
-export interface IDataItem {
+export interface IProduct {
   id: string;
   status: 'active' | 'archive';
   sum: number;
@@ -8,3 +8,5 @@ export interface IDataItem {
   delivery_date: string;
   currency: string;
 }
+
+export type DataIndex = keyof IProduct;

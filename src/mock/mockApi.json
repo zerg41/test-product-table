@@ -60,6 +60,33 @@
       ],
       "enabled": true,
       "responseMode": null
+    },
+    {
+      "uuid": "c14067c3-42a2-4f61-8d8a-1e8934d2ff1b",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "cancel",
+      "responses": [
+        {
+          "uuid": "99543c09-4021-4915-96e4-137336c5db62",
+          "body": "{\n  \"result\": \"Success!\",\n  \"cancelledItems\": {{ body }}\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true
+        }
+      ],
+      "enabled": true,
+      "responseMode": null
     }
   ],
   "proxyMode": false,

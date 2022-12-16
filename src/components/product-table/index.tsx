@@ -1,22 +1,19 @@
-import React, { FC, useMemo, useRef, useState } from 'react';
+import React, { FC, useState } from 'react';
 // components
-import { Button, Input, InputRef, Space, Table } from 'antd';
+import { Table } from 'antd';
+import Filter from './filter';
+import Footer from './footer';
 // styles
+import { SearchOutlined } from '@ant-design/icons';
 import s from './styles.module.css';
 // utils
-import type { ColumnType, ExpandableConfig, FilterConfirmProps } from 'antd/es/table/interface';
+import type { ColumnType, ExpandableConfig } from 'antd/es/table/interface';
 import type { ColumnsType } from 'antd/es/table';
-import type { IDataItem } from 'types';
-import { SearchOutlined } from '@ant-design/icons';
+import type { DataIndex, IProduct } from 'types';
 
-// interface IDataModel extends Omit<IDataItem, 'id'> {
-//   key: string;
-// }
-type DataIndex = keyof IDataItem;
-
-const expandableConfig: ExpandableConfig<IDataItem> = {
-  expandedRowRender: (record: IDataItem) => (
-    <p className={s.subtotal}>{`Total: ${record.sum + record.qty} ${record.currency}`}</p>
+const expandableConfig: ExpandableConfig<IProduct> = {
+  expandedRowRender: (record: IProduct) => (
+    <p className={s.subtotalRow}>{`Total: ${record.sum + record.qty} ${record.currency}`}</p>
   ),
   defaultExpandAllRows: false,
 };
@@ -32,85 +29,16 @@ const dateConfig: Intl.DateTimeFormatOptions = {
 };
 
 type ProductTableProps = {
-  data: IDataItem[];
+  data: IProduct[];
 };
 
 export const ProductTable: FC<ProductTableProps> = ({ data }) => {
-  const [searchText, setSearchText] = useState('');
-  const [searchedColumn, setSearchedColumn] = useState<DataIndex>();
-  const searchInput = useRef<InputRef>(null);
+  let [searchText, setSearchText] = useState<string>();
+  let [searchedColumn, setSearchedColumn] = useState<DataIndex>();
+  let [selectedItems, setSelectedItems] = useState<IProduct['id'][]>([]);
 
-  let tableData = useMemo(() => {
-    return data.sort((a, b) => Date.parse(a.delivery_date) - Date.parse(b.delivery_date)) || [];
-  }, [data]);
-
-  function handleSearch(
-    selectedKeys: string[],
-    confirm: (param?: FilterConfirmProps) => void,
-    dataIndex: DataIndex
-  ) {
-    confirm();
-    setSearchText(selectedKeys[0]);
-    setSearchedColumn(dataIndex);
-  }
-
-  function handleReset(clearFilters: () => void) {
-    clearFilters();
-    setSearchText('');
-  }
-
-  function getColumnSearchProps(dataIndex: DataIndex): ColumnType<IDataItem> {
-    return {
-      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
-        <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
-          <Input
-            ref={searchInput}
-            placeholder={`Search ${dataIndex}`}
-            value={selectedKeys[0]}
-            onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-            onPressEnter={() => handleSearch(selectedKeys as string[], confirm, dataIndex)}
-            style={{ marginBottom: 8, display: 'block' }}
-          />
-          <Space>
-            <Button
-              type='primary'
-              onClick={() => handleSearch(selectedKeys as string[], confirm, dataIndex)}
-              icon={<SearchOutlined />}
-              size='small'
-              style={{ width: 90 }}
-            >
-              Search
-            </Button>
-            <Button
-              onClick={() => {
-                clearFilters && handleReset(clearFilters);
-                handleSearch(selectedKeys as string[], confirm, dataIndex);
-              }}
-              size='small'
-              style={{ width: 90 }}
-            >
-              Reset
-            </Button>
-          </Space>
-        </div>
-      ),
-      filterIcon: (filtered: boolean) => (
-        <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
-      ),
-      onFilter: (value, record) =>
-        record[dataIndex]
-          .toString()
-          .toLowerCase()
-          .includes((value as string).toLowerCase()),
-      onFilterDropdownOpenChange: (visible) => {
-        if (visible) {
-          setTimeout(() => searchInput.current?.select(), 100);
-        }
-      },
-    };
-  }
-
-  let columns: ColumnsType<IDataItem> = [
+  let tableData = data.sort((a, b) => Date.parse(a.delivery_date) - Date.parse(b.delivery_date));
+  let tableColumns: ColumnsType<IProduct> = [
     {
       title: 'Status',
       dataIndex: 'status',
@@ -126,7 +54,7 @@ export const ProductTable: FC<ProductTableProps> = ({ data }) => {
       width: 200,
     },
     {
-      title: 'Qty',
+      title: 'Quantity',
       dataIndex: 'qty',
       key: 'qty',
       ...getColumnSearchProps('qty'),
@@ -160,25 +88,53 @@ export const ProductTable: FC<ProductTableProps> = ({ data }) => {
       title: 'Currency',
       dataIndex: 'currency',
       key: 'currency',
-      width: 100,
       ...getColumnSearchProps('currency'),
+      width: 100,
     },
   ];
 
+  function handleSelect(selectedRowKeys: React.Key[]) {
+    let selectedItemIds = selectedRowKeys.map((key) => String(key));
+    setSelectedItems(selectedItemIds);
+  }
+
+  function getColumnSearchProps(dataIndex: DataIndex): ColumnType<IProduct> {
+    return {
+      filterDropdown: (props) => (
+        <Filter
+          dataIndex={dataIndex}
+          setSearchText={setSearchText}
+          setSearchedColumn={setSearchedColumn}
+          {...props}
+        />
+      ),
+      filterIcon: (filtered: boolean) => (
+        <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />
+      ),
+      onFilter: (value, record) =>
+        record[dataIndex]
+          .toString()
+          .toLowerCase()
+          .includes((value as string).toLowerCase()),
+    };
+  }
+
   return (
     <Table
-      columns={columns}
+      columns={tableColumns}
       dataSource={tableData}
       rowKey='id'
       expandable={expandableConfig}
-      summary={(data) => {
-        return <div>2</div>;
-      }}
       pagination={false}
       size='small'
       className={s.table}
       sticky={true}
-      scroll={{ y: 600 }}
-    ></Table>
+      scroll={{ y: 530 }}
+      rowSelection={{
+        selectedRowKeys: selectedItems,
+        onChange: handleSelect,
+      }}
+      footer={(records) => <Footer data={records} selectedItemIds={selectedItems} />}
+    />
   );
 };
